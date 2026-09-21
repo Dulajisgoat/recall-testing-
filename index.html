@@ -1,281 +1,404 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Authentication</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            --primary-green: #10b981;
-            --primary-hover: #059669;
-            --bg-color: #0b0f19;
-            --card-bg: rgba(17, 24, 39, 0.7);
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --border-color: rgba(16, 185, 129, 0.2);
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Account</title>
+<style>
+  :root{
+    --green-600:#0e9f6e;
+    --green-700:#0a7d55;
+    --green-50:#eef7f2;
+    --ink:#0f1a15;
+    --body:#3c4a43;
+    --muted:#6f7d76;
+    --line:#e3e9e5;
+    --bg:#f4f7f5;
+  }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
+  *{box-sizing:border-box}
 
-        body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(circle at top right, rgba(16, 185, 129, 0.15), transparent 40%),
-                              radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.1), transparent 40%);
-            color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
+  html,body{height:100%}
 
-        .auth-container {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 40px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
+  body{
+    margin:0;
+    padding:24px;
+    display:grid;
+    place-items:center;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:radial-gradient(820px 460px at 50% -12%, #ddefe5, transparent 72%);
+    pointer-events:none;
+  }
 
-        .header h2 {
-            font-weight: 600;
-            font-size: 24px;
-            letter-spacing: -0.5px;
-        }
+  .card{
+    position:relative;
+    width:100%;
+    max-width:394px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:34px 32px 32px;
+    box-shadow:0 1px 2px rgba(16,40,28,.04), 0 16px 40px -18px rgba(16,40,28,.18);
+  }
 
-        .header p {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-top: 8px;
-        }
+  .mark{
+    width:34px;
+    height:34px;
+    border-radius:10px;
+    background:var(--green-600);
+    color:#fff;
+    display:grid;
+    place-items:center;
+  }
 
-        .tabs {
-            display: flex;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-            padding: 4px;
-            margin-bottom: 24px;
-        }
+  .mark svg{width:18px;height:18px}
 
-        .tab-btn {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            padding: 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
+  h1{
+    margin:16px 0 4px;
+    font-size:21px;
+    font-weight:600;
+    letter-spacing:-.015em;
+  }
 
-        .tab-btn.active {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--primary-green);
-        }
+  .sub{
+    margin:0;
+    font-size:14px;
+    color:var(--muted);
+    word-break:break-word;
+  }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+  .tabs{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:4px;
+    padding:4px;
+    margin:24px 0 22px;
+    background:var(--green-50);
+    border-radius:11px;
+  }
 
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
+  .tab{
+    appearance:none;
+    border:0;
+    background:transparent;
+    padding:9px 0;
+    font:inherit;
+    font-size:13.5px;
+    font-weight:500;
+    color:var(--muted);
+    border-radius:8px;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease, box-shadow .15s ease;
+  }
 
-        .form-group input {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            color: var(--text-main);
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
-            transition: all 0.3s ease;
-        }
+  .tab:hover{color:var(--green-700)}
 
-        .form-group input:focus {
-            border-color: var(--primary-green);
-            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-        }
+  .tab.is-active{
+    background:#fff;
+    color:var(--green-700);
+    box-shadow:0 1px 3px rgba(16,40,28,.1);
+  }
 
-        .submit-btn {
-            width: 100%;
-            background: var(--primary-green);
-            color: #ffffff;
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            margin-top: 10px;
-        }
+  .field{margin-bottom:16px}
 
-        .submit-btn:hover {
-            background: var(--primary-hover);
-        }
+  label{
+    display:block;
+    margin-bottom:6px;
+    font-size:13px;
+    font-weight:500;
+    color:var(--body);
+  }
 
-        .submit-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
+  input{
+    width:100%;
+    padding:11px 13px;
+    font:inherit;
+    font-size:14.5px;
+    color:var(--ink);
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:9px;
+    outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
 
-        .message {
-            margin-top: 16px;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            text-align: center;
-            display: none;
-        }
+  input:focus{
+    border-color:var(--green-600);
+    box-shadow:0 0 0 3px rgba(14,159,110,.14);
+  }
 
-        .message.error {
-            display: block;
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
+  input:disabled{background:#fafbfa;color:var(--muted)}
 
-        .message.success {
-            display: block;
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--primary-green);
-            border: 1px solid var(--border-color);
-        }
-    </style>
+  .hint{
+    margin:7px 0 0;
+    font-size:12.5px;
+    color:var(--muted);
+  }
+
+  .alert{
+    margin:0 0 15px;
+    padding:10px 12px;
+    border-radius:9px;
+    font-size:13.5px;
+    line-height:1.45;
+  }
+
+  .alert.error{background:#fdf1f0;color:#a1392b;border:1px solid #f6d8d4}
+  .alert.ok{background:var(--green-50);color:var(--green-700);border:1px solid #cdeadd}
+
+  button.submit{
+    width:100%;
+    margin-top:4px;
+    padding:12px;
+    font:inherit;
+    font-size:14.5px;
+    font-weight:600;
+    color:#fff;
+    background:var(--green-600);
+    border:0;
+    border-radius:9px;
+    cursor:pointer;
+    transition:background .15s ease, transform .06s ease;
+  }
+
+  button.submit:hover:not(:disabled){background:var(--green-700)}
+  button.submit:active:not(:disabled){transform:translateY(1px)}
+  button.submit:disabled{opacity:.6;cursor:default}
+
+  button.ghost{
+    margin-top:26px;
+    color:var(--green-700);
+    background:#fff;
+    border:1px solid var(--line);
+  }
+
+  button.ghost:hover:not(:disabled){background:var(--green-50);border-color:#cdeadd}
+
+  [hidden]{display:none !important}
+</style>
 </head>
 <body>
 
-    <div class="auth-container">
-        <div class="header">
-            <h2 id="formTitle">Welcome Back</h2>
-            <p id="formSubtitle">Enter your details to sign in</p>
-        </div>
+<main>
+  <section class="card" id="authView">
+    <span class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M5 12.5 9.5 17 19 7.5" stroke="currentColor" stroke-width="2.6"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>
 
-        <div class="tabs">
-            <button class="tab-btn active" id="tabSignIn" onclick="switchTab('signin')">Sign In</button>
-            <button class="tab-btn" id="tabSignUp" onclick="switchTab('signup')">Create Account</button>
-        </div>
+    <h1 id="title">Welcome back</h1>
+    <p class="sub" id="subtitle">Sign in to continue.</p>
 
-        <form id="authForm" onsubmit="handleAuth(event)">
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" required autocomplete="email">
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" required autocomplete="current-password">
-            </div>
-            
-            <button type="submit" class="submit-btn" id="submitBtn">Sign In</button>
-        </form>
-
-        <div id="messageBox" class="message"></div>
+    <div class="tabs" role="tablist" aria-label="Account">
+      <button type="button" class="tab is-active" data-tab="signin" role="tab" aria-selected="true">Sign in</button>
+      <button type="button" class="tab" data-tab="signup" role="tab" aria-selected="false">Create account</button>
     </div>
 
-    <script>
-        const SUPABASE_URL = 'https://vxbfpehldttiubjxyiyo.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_0zbsGw86YpDVxyqUhWrCoA_eI69dIyK';
-        
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    <form id="form" novalidate>
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="email" spellcheck="false" required>
+      </div>
 
-        let currentMode = 'signin';
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" required>
+        <p class="hint" id="pwHint" hidden>At least 8 characters.</p>
+      </div>
 
-        function switchTab(mode) {
-            currentMode = mode;
-            const title = document.getElementById('formTitle');
-            const subtitle = document.getElementById('formSubtitle');
-            const btn = document.getElementById('submitBtn');
-            const msgBox = document.getElementById('messageBox');
-            
-            document.getElementById('tabSignIn').classList.remove('active');
-            document.getElementById('tabSignUp').classList.remove('active');
-            
-            msgBox.className = 'message';
-            msgBox.textContent = '';
-            document.getElementById('password').value = '';
+      <div class="alert" id="alert" role="status" hidden></div>
 
-            if (mode === 'signin') {
-                document.getElementById('tabSignIn').classList.add('active');
-                title.textContent = 'Welcome Back';
-                subtitle.textContent = 'Enter your details to sign in';
-                btn.textContent = 'Sign In';
-                document.getElementById('password').setAttribute('autocomplete', 'current-password');
-            } else {
-                document.getElementById('tabSignUp').classList.add('active');
-                title.textContent = 'Create Account';
-                subtitle.textContent = 'Sign up to get started';
-                btn.textContent = 'Create Account';
-                document.getElementById('password').setAttribute('autocomplete', 'new-password');
-            }
+      <button type="submit" class="submit" id="submitBtn">Sign in</button>
+    </form>
+  </section>
+
+  <section class="card" id="appView" hidden>
+    <span class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M5 12.5 9.5 17 19 7.5" stroke="currentColor" stroke-width="2.6"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>
+
+    <h1>You're signed in</h1>
+    <p class="sub" id="userEmail"></p>
+
+    <button type="button" class="submit ghost" id="signOutBtn">Sign out</button>
+  </section>
+</main>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  const supabase = createClient(
+    'https://vxbfpehldttiubjxyiyo.supabase.co',
+    'sb_publishable_0zbsGw86YpDVxyqUhWrCoA_eI69dIyK'
+  );
+
+  const authView   = document.getElementById('authView');
+  const appView    = document.getElementById('appView');
+  const form       = document.getElementById('form');
+  const emailInput = document.getElementById('email');
+  const passInput  = document.getElementById('password');
+  const pwHint     = document.getElementById('pwHint');
+  const alertBox   = document.getElementById('alert');
+  const submitBtn  = document.getElementById('submitBtn');
+  const signOutBtn = document.getElementById('signOutBtn');
+  const title      = document.getElementById('title');
+  const subtitle   = document.getElementById('subtitle');
+  const userEmail  = document.getElementById('userEmail');
+  const tabs       = [...document.querySelectorAll('.tab')];
+
+  let mode = 'signin';
+  let busy = false;
+
+  function clearAlert() {
+    alertBox.hidden = true;
+    alertBox.textContent = '';
+    alertBox.className = 'alert';
+  }
+
+  function showAlert(message, kind) {
+    alertBox.textContent = message;
+    alertBox.className = 'alert ' + kind;
+    alertBox.hidden = false;
+  }
+
+  function setMode(next) {
+    mode = next;
+
+    tabs.forEach(tab => {
+      const active = tab.dataset.tab === next;
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-selected', String(active));
+    });
+
+    const signingIn = next === 'signin';
+
+    title.textContent    = signingIn ? 'Welcome back' : 'Create account';
+    subtitle.textContent = signingIn ? 'Sign in to continue.' : 'Just an email and a password.';
+    submitBtn.textContent = signingIn ? 'Sign in' : 'Create account';
+    passInput.autocomplete = signingIn ? 'current-password' : 'new-password';
+    pwHint.hidden = signingIn;
+
+    clearAlert();
+  }
+
+  function setBusy(state) {
+    busy = state;
+    emailInput.disabled = state;
+    passInput.disabled = state;
+    submitBtn.disabled = state;
+
+    if (state) {
+      submitBtn.textContent = mode === 'signin' ? 'Signing in…' : 'Creating account…';
+    } else {
+      submitBtn.textContent = mode === 'signin' ? 'Sign in' : 'Create account';
+    }
+  }
+
+  function friendly(error) {
+    const raw = (error && error.message) || 'Something went wrong. Try again.';
+
+    if (/invalid login credentials/i.test(raw))  return "That email and password don't match.";
+    if (/email not confirmed/i.test(raw))        return 'Confirm your email first — check your inbox.';
+    if (/user already registered/i.test(raw))    return 'An account with that email already exists.';
+    if (/password should be/i.test(raw))         return 'Password must be at least 8 characters.';
+    if (/rate limit|too many/i.test(raw))        return 'Too many attempts. Wait a minute and try again.';
+    if (/failed to fetch|networkerror/i.test(raw)) return "Can't reach the server. Check your connection.";
+
+    return raw;
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      if (busy || tab.dataset.tab === mode) return;
+      setMode(tab.dataset.tab);
+    });
+  });
+
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (busy) return;
+
+    const email = emailInput.value.trim();
+    const password = passInput.value;
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return showAlert('Enter a valid email address.', 'error');
+    }
+
+    if (password.length < 8) {
+      return showAlert('Password must be at least 8 characters.', 'error');
+    }
+
+    clearAlert();
+    setBusy(true);
+
+    try {
+      if (mode === 'signin') {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+
+        if (!data.session) {
+          form.reset();
+          showAlert('Check your inbox — we sent a confirmation link to ' + email + '.', 'ok');
         }
+      }
+    } catch (error) {
+      showAlert(friendly(error), 'error');
+    } finally {
+      setBusy(false);
+    }
+  });
 
-        async function handleAuth(event) {
-            event.preventDefault();
-            
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const btn = document.getElementById('submitBtn');
-            const msgBox = document.getElementById('messageBox');
+  signOutBtn.addEventListener('click', async () => {
+    signOutBtn.disabled = true;
+    await supabase.auth.signOut();
+    signOutBtn.disabled = false;
+    form.reset();
+    setMode('signin');
+  });
 
-            btn.disabled = true;
-            btn.textContent = 'Processing...';
-            msgBox.className = 'message';
-            
-            try {
-                let result;
-                
-                if (currentMode === 'signup') {
-                    result = await supabase.auth.signUp({
-                        email: email,
-                        password: password
-                    });
-                } else {
-                    result = await supabase.auth.signInWithPassword({
-                        email: email,
-                        password: password
-                    });
-                }
+  function showApp(user) {
+    userEmail.textContent = user.email || '';
+    authView.hidden = true;
+    appView.hidden = false;
+    clearAlert();
+  }
 
-                if (result.error) throw result.error;
+  function showAuth() {
+    appView.hidden = true;
+    authView.hidden = false;
+  }
 
-                msgBox.className = 'message success';
-                if (currentMode === 'signup') {
-                    msgBox.textContent = 'Account created successfully! You can now sign in.';
-                    setTimeout(() => switchTab('signin'), 2000);
-                } else {
-                    msgBox.textContent = 'Successfully signed in!';
-                }
-                
-            } catch (error) {
-                msgBox.className = 'message error';
-                msgBox.textContent = error.message;
-            } finally {
-                btn.disabled = false;
-                btn.textContent = currentMode === 'signin' ? 'Sign In' : 'Create Account';
-            }
-        }
-    </script>
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session && session.user) showApp(session.user);
+    else showAuth();
+  });
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session && session.user) showApp(session.user);
+
+  setMode('signin');
+</script>
+
 </body>
 </html>
